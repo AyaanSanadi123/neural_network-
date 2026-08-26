@@ -100,3 +100,13 @@ Matrix* matrix_add(Matrix* a,Matrix* b){
     }
     return c;
 }
+
+Matrix* matrix_map(Matrix* m, double (*func)(double)) {
+    Matrix* result = matrix_create(m->rows, m->cols);
+    
+    int total_elements = m->rows * m->cols;
+    for (int i = 0; i < total_elements; i++) {
+        result->data[i] = func(m->data[i]);
+    }   
+    return result;
+}

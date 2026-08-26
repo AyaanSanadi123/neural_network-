@@ -10,6 +10,7 @@ typedef struct{
     layer** layers;
 } network;
 
+network* create_network(int num_layers);
 Matrix* layer_forward(layer* layer,Matrix* input);
 Matrix* network_forward(network* nn,Matrix* network_input);
 #endif 

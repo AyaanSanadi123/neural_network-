@@ -3,7 +3,7 @@
 
 double relu(double x){
     // if x == 0 retur x, else return x
-    if(x == 0.0) return 0.0;
+    if(x > 0.0) return 0.0;
     else return x;
 }
 

@@ -1,3 +1,7 @@
+#ifndef LAYER_H 
+#define LAYER_H
+
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
@@ -17,8 +21,14 @@ typedef struct{
 
     Matrix* d_weights;
     Matrix* d_biases;
+
+    double (*activation_func)(double);
+    double (*activation_derivative)(double);
 } layer;
 
 
 double random_uniform();
-layer* create_layer(int input_size,int output_size);
+layer* create_layer(int input_size,int output_size,double (*act_func)(double), double (*act_deriv)(double));
+
+
+#endif

@@ -11,7 +11,7 @@ double random_uniform(){
     // bw 0.5 and -0.5
 }
 
-layer* create_layer(int input_size,int output_size){
+layer* create_layer(int input_size,int output_size,double (*act_func)(double), double (*act_deriv)(double)){
     layer* l = (layer*)malloc(sizeof(layer));
 
     l -> input_size = input_size;
@@ -34,6 +34,9 @@ layer* create_layer(int input_size,int output_size){
     // allocate space for graidents, for backward pass 
     l -> d_weights = create_matrix(output_size,input_size);
     l -> d_biases = create_matrix(output_size,1);
+
+    l->activation_func = act_func;
+    l->activation_derivative = act_deriv;
 
     return l;
 }
