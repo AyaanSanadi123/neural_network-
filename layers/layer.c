@@ -40,3 +40,35 @@ layer* create_layer(int input_size,int output_size,double (*act_func)(double), d
 
     return l;
 }
+void layer_free_caches(layer* l){
+    if (l->input_cache != NULL) {
+        free_matrix(l->input_cache);
+        l->input_cache = NULL;
+    }
+    
+    if (l->z_cache != NULL) {
+        free_matrix(l->z_cache);
+        l->z_cache = NULL;
+    }
+    
+    if (l->activation_cache != NULL) {
+        free_matrix(l->activation_cache);
+        l->activation_cache = NULL;
+    }
+}
+
+void free_layer(layer* l){
+    if(l->weights != NULL) free_matrix(l->weights);
+    l->weights = NULL;
+
+    if(l->biases != NULL) free_matrix(l->biases);
+    l->biases = NULL;
+
+
+    if(l->d_weights != NULL) free_matrix(l->d_weights); l->d_weights = NULL;
+    if(l->d_biases != NULL) free_matrix(l->d_biases); l-> d_biases = NULL;
+
+    layer_free_caches(l);
+    free(l);
+    
+}

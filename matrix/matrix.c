@@ -110,3 +110,25 @@ Matrix* matrix_map(Matrix* m, double (*func)(double)) {
     }   
     return result;
 }
+Matrix* matrix_subtract(Matrix* a, Matrix* b){
+    assert(a->rows == b-> rows && a->cols == b->cols);
+
+    Matrix* c = create_matrix(a->rows,a->cols);
+
+    int total_elements = a->rows * a-> cols;
+    for (int i = 0; i < total_elements; i++)
+    {
+       c->data[i] = a->data[i] - b ->data[i];
+    }
+    return c;
+}
+
+Matrix* matrix_multiply_scalar(Matrix* m, double scalar){
+    Matrix* result = create_matrix(m->rows,m->cols);
+    int total_elements = m->rows * m -> cols ;
+    for (int i = 0; i < total_elements; i++)
+    {
+       result -> data[i] = m->data[i] * scalar;
+    }
+    return result;
+}

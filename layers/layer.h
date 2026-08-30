@@ -29,6 +29,6 @@ typedef struct{
 
 double random_uniform();
 layer* create_layer(int input_size,int output_size,double (*act_func)(double), double (*act_deriv)(double));
-
-
+void layer_free_caches(layer* l);
+void free_layer(layer* l);
 #endif

@@ -13,5 +13,6 @@ Matrix * hadamard_product(Matrix* a,Matrix* b);
 Matrix* matrix_copy(Matrix* m);
 Matrix* matrix_add(Matrix* a, Matrix* b);
 Matrix* matrix_map(Matrix* m, double (*func)(double));
-
+Matrix* matrix_subtract(Matrix* a, Matrix* b);
+Matrix* matrix_multiply_scalar(Matrix* m, double scalar);
 #endif
