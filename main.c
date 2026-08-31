@@ -6,50 +6,85 @@
 #include "optimizer.h"
 #include "losses.h"
 #include "activations.h"
-void train_network(network* nn, Matrix* input_data, Matrix* target_output, int epochs, Optimizer* opt, Matrix* (*loss_deriv_func)(Matrix*, Matrix*)) {
+// Upgraded to accept arrays of matrices (Matrix**) and the number of flashcards (num_samples)
+void train_network(network* nn, Matrix** input_data, Matrix** target_output, int num_samples, int epochs, Optimizer* opt, Matrix* (*loss_deriv_func)(Matrix*, Matrix*)) {
+    
     printf("--- STARTING TRAINING LOOP (%d Epochs) ---\n", epochs);
-    for (int epoch = 0; epoch < epochs; epoch++){
+    
+    for (int epoch = 0; epoch < epochs; epoch++) {
         
-        // forward pass 
-        Matrix* prediction = network_forward(nn,input_data);
+        // Loop through every single flashcard in the dataset
+        for (int i = 0; i < num_samples; i++) {
+            // Forward pass for this specific flashcard
+            Matrix* prediction = network_forward(nn, input_data[i]);
 
-        if (epoch % 10 == 0) {
-            printf("Epoch %d - Prediction: %f (Target: %f)\n", 
-                   epoch, prediction->data[0], target_output->data[0]);
+            // Backward pass
+            network_backward(nn, prediction, target_output[i], loss_deriv_func);
+
+            // Update weights
+            network_update_weights(nn, opt);
+
+            // Clean up cache and prediction
+            network_free_caches(nn);
+            free_matrix(prediction);
         }
 
-        // backward pass 
-        network_backward(nn,prediction,target_output,loss_deriv_func);
-
-        // update the weights 
-        network_update_weights(nn,opt);
-
-        // clean up the cache 
-        network_free_caches(nn);
-        free_matrix(prediction);
+        // Print progress every 1000 epochs to watch it learn
+        if (epoch % 1000 == 0) {
+            // Let's test it on the first flashcard [0, 0] just to see the progress
+            Matrix* sample_pred = network_forward(nn, input_data[0]);
+            printf("Epoch %d - Flashcard [0,0] Prediction: %f (Target: %f)\n", 
+                   epoch, sample_pred->data[0], target_output[0]->data[0]);
+            
+            network_free_caches(nn);
+            free_matrix(sample_pred);
+        }
     }
-
 }
 
 int main(){
 
     // Create a network 
-    network* nn = create_network(3);
-    nn->layers[0] = create_layer(2,4,relu,relu_derivative);
-    nn->layers[1] = create_layer(4, 4, relu, relu_derivative);
-    nn->layers[2] = create_layer(4, 1, sigmoid, sigmoid_derivative);
+   // 1. Create the Architecture (Input: 2 -> Hidden: 8 -> Output: 1)
+    network* nn = create_network(2);
+    // Hidden layer needs a non-linear activation like ReLU to solve XOR
+    nn->layers[0] = create_layer(2, 8, relu, relu_derivative); 
+    // Output layer uses Sigmoid to squash the final answer between 0 and 1
+    nn->layers[1] = create_layer(8, 1, sigmoid, sigmoid_derivative);
 
-    // initializer the optimizer 
-    Optimizer* sgd = create_sgd_optimizer(0.01);
+    Optimizer* sgd = create_sgd_optimizer(0.1); // Learning rate of 0.1
 
+    // 2. Prepare the XOR Dataset (4 inputs, 4 targets)
+    Matrix* inputs[4];
+    Matrix* targets[4];
+
+    for(int i = 0; i < 4; i++) {
+        inputs[i] = create_matrix(2, 1);
+        targets[i] = create_matrix(1, 1);
+    }
+
+    // Flashcard 1: [0, 0] -> [0]
+    inputs[0]->data[0] = 0.0; inputs[0]->data[1] = 0.0; targets[0]->data[0] = 0.0;
+    // Flashcard 2: [0, 1] -> [1]
+    inputs[1]->data[0] = 0.0; inputs[1]->data[1] = 1.0; targets[1]->data[0] = 1.0;
+    // Flashcard 3: [1, 0] -> [1]
+    inputs[2]->data[0] = 1.0; inputs[2]->data[1] = 0.0; targets[2]->data[0] = 1.0;
+    // Flashcard 4: [1, 1] -> [0]
+    inputs[3]->data[0] = 1.0; inputs[3]->data[1] = 1.0; targets[3]->data[0] = 0.0;
+
+    // 3. The Custom Training Loop
+    printf("--- STARTING TRAINING ---\n");
+    int epochs = 5000;
 
     // initiate the training loop 
-    train_network(nn, input_data, target_output, 100, sgd, mse_derivative);
+    train_network(nn, inputs, targets, 4,epochs, sgd, mse_derivative);
 
     // free all the pointers post training 
     free_network(nn);           // Our new destructor!
-    free_matrix(input_data);
-    free_matrix(target_output);
+   for(int i = 0; i < 4; i++) {
+        free_matrix(inputs[i]);
+        free_matrix(targets[i]);
+    }
     free(sgd);
     printf("--- SHUTDOWN SUCCESSFUL ---\n");
 

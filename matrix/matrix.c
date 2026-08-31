@@ -102,7 +102,7 @@ Matrix* matrix_add(Matrix* a,Matrix* b){
 }
 
 Matrix* matrix_map(Matrix* m, double (*func)(double)) {
-    Matrix* result = matrix_create(m->rows, m->cols);
+    Matrix* result = create_matrix(m->rows, m->cols);
     
     int total_elements = m->rows * m->cols;
     for (int i = 0; i < total_elements; i++) {
