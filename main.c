@@ -13,35 +13,37 @@ void train_network(network* nn, Matrix** input_data, Matrix** target_output, int
     
     for (int epoch = 0; epoch < epochs; epoch++) {
         
-        // Loop through every single flashcard in the dataset
+        // ====================================================
+        // 1. TRAINING PHASE (Loop through every flashcard)
+        // ====================================================
         for (int i = 0; i < num_samples; i++) {
-            // Forward pass for this specific flashcard
             Matrix* prediction = network_forward(nn, input_data[i]);
-
-            // Backward pass
             network_backward(nn, prediction, target_output[i], loss_deriv_func);
-
-            // Update weights
             network_update_weights(nn, opt);
-
-            // Clean up cache and prediction
+            
             network_free_caches(nn);
             free_matrix(prediction);
         }
 
-        // Print progress every 1000 epochs to watch it learn
+        // ====================================================
+        // 2. LOGGING PHASE (Print progress every 1000 epochs)
+        // ====================================================
         if (epoch % 1000 == 0) {
-            // Let's test it on the first flashcard [0, 0] just to see the progress
-            Matrix* sample_pred = network_forward(nn, input_data[0]);
-            printf("Epoch %d - Flashcard [0,0] Prediction: %f (Target: %f)\n", 
-                   epoch, sample_pred->data[0], target_output[0]->data[0]);
-            
-            network_free_caches(nn);
-            free_matrix(sample_pred);
+            printf("\n--- Epoch %d ---\n", epoch);
+            for(int i = 0; i < num_samples; i++) {
+                Matrix* pred = network_forward(nn, input_data[i]);
+                printf("Input [%.1f, %.1f] -> Predicted: %.4f (Target: %.1f)\n", 
+                       input_data[i]->data[0], input_data[i]->data[1], 
+                       pred->data[0], target_output[i]->data[0]);
+                
+                network_free_caches(nn);
+                free_matrix(pred);
+            }
         }
-    }
-}
-
+        
+    } 
+    
+} 
 int main(){
 
     // Create a network 
@@ -52,7 +54,7 @@ int main(){
     // Output layer uses Sigmoid to squash the final answer between 0 and 1
     nn->layers[1] = create_layer(8, 1, sigmoid, sigmoid_derivative);
 
-    Optimizer* sgd = create_sgd_optimizer(0.1); // Learning rate of 0.1
+    Optimizer* sgd = create_sgd_optimizer(0.01); // Learning rate of 0.1
 
     // 2. Prepare the XOR Dataset (4 inputs, 4 targets)
     Matrix* inputs[4];

@@ -36,7 +36,7 @@ Matrix* network_forward(network* nn, Matrix* network_input){
     for(int i = 0;i<nn->num_layers;i++){
         current_signal = layer_forward(nn->layers[i],current_signal);
     }
-    return current_signal;
+    return matrix_copy(current_signal);
 }
 
 Matrix* layer_backward(layer* l, Matrix* dA){
@@ -51,13 +51,13 @@ Matrix* layer_backward(layer* l, Matrix* dA){
 
     // calculate dW = dZ * A_prev^T
 
-    Matrix* A_prev_T = transpose(l->activation_cache);
+    Matrix* A_prev_T = transpose(l->input_cache);
     Matrix* new_d_weights = dot_product(dZ,A_prev_T);
 
     if (l->d_weights != NULL) free_matrix(l->d_weights);
     l->d_weights = new_d_weights;
 
-    free(A_prev_T);
+    free_matrix(A_prev_T);
 
     // calculate db = dZ
     if (l->d_biases != NULL) free_matrix(l->d_biases);

@@ -25,6 +25,10 @@ layer* create_layer(int input_size,int output_size,double (*act_func)(double), d
     {
         l->weights->data[i] = random_uniform();
     }
+    
+    for (int i = 0; i < l->biases->rows * l->biases->cols; i++) {
+        l->biases->data[i] = 0.0;
+    }
 
     // we need to prepare cache for the forward pass, set it to null and update it for the forward pass 
     l -> input_cache = NULL;
