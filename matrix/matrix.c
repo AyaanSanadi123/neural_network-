@@ -90,9 +90,40 @@ Matrix * dot_product(Matrix* a,Matrix * b,ThreadPool * pool){
     // number of rows per thread 
     int rows_per_thread = a->rows / actual_threads;
 
+    // one task = one thread, so the space needed for 
+    // the number of tasks that can be done in parallel is = no. of threads 
+    DotTask* tasks = (DotTask*) malloc(actual_threads * sizeof(DotTask));
 
-    
+    // the chunking logic 
+    for (int i = 0; i < actual_threads; i++)
+    {
+        tasks[i].a = a;
+        tasks[i].b = b;
+        tasks[i].c = c;
 
+        // the start row 
+        tasks[i].start_row = i * rows_per_thread;
+
+        // the end row 
+        if(i == actual_threads - 1){
+            tasks[i].end_row = a -> rows;
+        }else {
+            tasks[i].end_row = (i+1)*rows_per_thread;
+        }
+
+        // this takes the task and sends it to the producer 
+        // the producer, adds the task to the queue and calls a thread to execute it
+        // then the consumer gets the lock and begins to execute it
+        // this cycle occurs until all the tasks for this matrix operation are put in the queue
+        thread_pool_submit(pool,dot_worker,&tasks[i]);
+    }
+    // the consumer has a cond variable that triggers this when the last task is completed (pending tasks == 0)
+
+    thread_pool_wait(pool);
+
+    free(tasks);
+
+    return c;
 }
 
 // transpose a matrix 

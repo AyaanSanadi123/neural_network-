@@ -12,12 +12,12 @@ network* create_network(int num_layers){
     return nn;
 }
 
-Matrix* layer_forward(layer* layer, Matrix* input){
+Matrix* layer_forward(layer* layer, Matrix* input,ThreadPool* pool){
     // cache the input matrix weights 
     layer-> input_cache = matrix_copy(input);
 
     // W * X dot product of weight and input 
-    Matrix* wx = dot_product(layer->weights,input);
+    Matrix* wx = dot_product(layer->weights,input,pool);
     
     // prepare the preactivation (z = wx+b)
     // and cache this value aswell 
@@ -29,17 +29,17 @@ Matrix* layer_forward(layer* layer, Matrix* input){
     return layer->activation_cache;
 }
 
-Matrix* network_forward(network* nn, Matrix* network_input){
+Matrix* network_forward(network* nn, Matrix* network_input,ThreadPool* pool){
     Matrix* current_signal = network_input;
      // this is layer->activation_cache of the previous layer, if its the first layer, then its the raw input itself
 
     for(int i = 0;i<nn->num_layers;i++){
-        current_signal = layer_forward(nn->layers[i],current_signal);
+        current_signal = layer_forward(nn->layers[i],current_signal,pool);
     }
     return matrix_copy(current_signal);
 }
 
-Matrix* layer_backward(layer* l, Matrix* dA){
+Matrix* layer_backward(layer* l, Matrix* dA,ThreadPool* pool){
     // calculate dZ = dA ⊙ g'(Z)
 
 
@@ -52,7 +52,7 @@ Matrix* layer_backward(layer* l, Matrix* dA){
     // calculate dW = dZ * A_prev^T
 
     Matrix* A_prev_T = transpose(l->input_cache);
-    Matrix* new_d_weights = dot_product(dZ,A_prev_T);
+    Matrix* new_d_weights = dot_product(dZ,A_prev_T,pool);
 
     if (l->d_weights != NULL) free_matrix(l->d_weights);
     l->d_weights = new_d_weights;
@@ -65,20 +65,20 @@ Matrix* layer_backward(layer* l, Matrix* dA){
 
     // calculate dA_prev = W^T * dZ
     Matrix* W_T = transpose(l->weights);
-    Matrix* dA_prev = dot_product(W_T, dZ);
+    Matrix* dA_prev = dot_product(W_T, dZ,pool);
     free_matrix(W_T);
     free_matrix(dZ);
     return dA_prev;
 }
 
-void network_backward(network* nn, Matrix* predictions, Matrix* expected, Matrix* (*loss_deriv_func)(Matrix*, Matrix*)){
+void network_backward(network* nn, Matrix* predictions, Matrix* expected, Matrix* (*loss_deriv_func)(Matrix*, Matrix*),ThreadPool* pool){
     // get the initial error, by running the loss function on the result 
     Matrix* current_error = loss_deriv_func(predictions,expected);
 
     // now run this backwards through the nework 
     for(int i = nn->num_layers - 1;i >= 0;i--){
         // updates dW,dB and resturns the error for the previous layer
-        Matrix* error_for_prev_layer = layer_backward(nn->layers[i],current_error);
+        Matrix* error_for_prev_layer = layer_backward(nn->layers[i],current_error,pool);
 
         free_matrix(current_error);
         current_error = error_for_prev_layer;

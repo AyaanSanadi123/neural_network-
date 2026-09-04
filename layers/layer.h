@@ -7,6 +7,7 @@
 #include<unistd.h>
 #include<math.h>
 #include<matrix.h>
+#include "threadpool.h"
 
 typedef struct{
     int input_size;

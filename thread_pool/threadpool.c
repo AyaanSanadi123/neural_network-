@@ -87,7 +87,7 @@ ThreadPool* thread_pool_init(int num_threads,int queue_capacity){
     return pool;
 }
 
-
+// think of this as the consumer, it always eats the tasks from the queue 
 static void* worker_loop(void* arg){
     // caste the argument into a pool obj 
     ThreadPool * pool = (ThreadPool*)arg;
@@ -104,6 +104,8 @@ static void* worker_loop(void* arg){
             pthread_mutex_unlock(&(pool -> lock));
             break;
         }
+
+        // at this point, one thread gets the task
 
         // pop the task from the ring buffer 
         Task task = pool -> task_queue[pool -> head];
@@ -131,6 +133,7 @@ static void* worker_loop(void* arg){
     return NULL;
 }
 
+// think of this as the producer, it fills the queue with tasks 
 bool thread_pool_submit(ThreadPool* pool, void (*execute)(void*), void* arg){
     if (pool == NULL || execute == NULL) return false;
 

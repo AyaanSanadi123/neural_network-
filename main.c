@@ -6,8 +6,9 @@
 #include "optimizer.h"
 #include "losses.h"
 #include "activations.h"
+#include "threadpool.h"
 // Upgraded to accept arrays of matrices (Matrix**) and the number of flashcards (num_samples)
-void train_network(network* nn, Matrix** input_data, Matrix** target_output, int num_samples, int epochs, Optimizer* opt, Matrix* (*loss_deriv_func)(Matrix*, Matrix*)) {
+void train_network(network* nn, Matrix** input_data, Matrix** target_output, int num_samples, int epochs, Optimizer* opt, Matrix* (*loss_deriv_func)(Matrix*, Matrix*),ThreadPool* pool) {
     
     printf("--- STARTING TRAINING LOOP (%d Epochs) ---\n", epochs);
     
@@ -17,8 +18,8 @@ void train_network(network* nn, Matrix** input_data, Matrix** target_output, int
         // 1. TRAINING PHASE (Loop through every flashcard)
         // ====================================================
         for (int i = 0; i < num_samples; i++) {
-            Matrix* prediction = network_forward(nn, input_data[i]);
-            network_backward(nn, prediction, target_output[i], loss_deriv_func);
+            Matrix* prediction = network_forward(nn, input_data[i],pool);
+            network_backward(nn, prediction, target_output[i], loss_deriv_func,pool);
             network_update_weights(nn, opt);
             
             network_free_caches(nn);
@@ -31,7 +32,7 @@ void train_network(network* nn, Matrix** input_data, Matrix** target_output, int
         if (epoch % 1000 == 0) {
             printf("\n--- Epoch %d ---\n", epoch);
             for(int i = 0; i < num_samples; i++) {
-                Matrix* pred = network_forward(nn, input_data[i]);
+                Matrix* pred = network_forward(nn, input_data[i],pool);
                 printf("Input [%.1f, %.1f] -> Predicted: %.4f (Target: %.1f)\n", 
                        input_data[i]->data[0], input_data[i]->data[1], 
                        pred->data[0], target_output[i]->data[0]);
@@ -56,6 +57,7 @@ int main(){
 
     Optimizer* sgd = create_sgd_optimizer(0.01); // Learning rate of 0.1
 
+    ThreadPool* pool = thread_pool_init(4,10);
     // 2. Prepare the XOR Dataset (4 inputs, 4 targets)
     Matrix* inputs[4];
     Matrix* targets[4];
@@ -79,7 +81,7 @@ int main(){
     int epochs = 5000;
 
     // initiate the training loop 
-    train_network(nn, inputs, targets, 4,epochs, sgd, mse_derivative);
+    train_network(nn, inputs, targets, 4,epochs, sgd, mse_derivative,pool);
 
     // free all the pointers post training 
     free_network(nn);           // Our new destructor!
@@ -88,7 +90,14 @@ int main(){
         free_matrix(targets[i]);
     }
     free(sgd);
+    thread_pool_destroy(pool);
     printf("--- SHUTDOWN SUCCESSFUL ---\n");
 
     return 0;
 }
+
+
+
+
+
+// gcc -Iactivation_functions -Ilayers -Iloss_functions -Imatrix -Inetwork -Ioptimizer -Ithread_pool main.c activation_functions\activations.c layers\layer.c loss_functions\losses.c matrix\matrix.c network\fp.c optimizer\optimizer.c thread_pool\threadpool.c -o neural_network.exe -pthread
