@@ -1,5 +1,7 @@
 #ifndef MATRIX_H
 #define MATRIX_H
+#include "threadpool.h"
+
 typedef struct{
     int cols;
     int rows;
@@ -7,7 +9,7 @@ typedef struct{
 } Matrix;
 Matrix * create_matrix(int rows,int cols );
 void free_matrix(Matrix * m);
-Matrix * dot_product(Matrix* a,Matrix * b);
+Matrix * dot_product(Matrix* a,Matrix * b,ThreadPool * pool);
 Matrix* transpose(Matrix * m);
 Matrix * hadamard_product(Matrix* a,Matrix* b);
 Matrix* matrix_copy(Matrix* m);

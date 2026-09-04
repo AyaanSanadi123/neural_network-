@@ -5,6 +5,32 @@
 
 #include<matrix.h>
 
+// this is the payload sent to the worker threads 
+typedef struct {
+    Matrix* a;
+    Matrix * b;
+    Matrix* c;
+    int start_row;
+    int end_row;
+} DotTask;
+
+// the goal of this function, is to do the maths just for its assigned rows
+static void dot_worker(void * arg){
+    DotTask* task = (DotTask*) arg;
+
+    for(int i = task -> start_row; i< task ->end_row;i++){
+        for(int j = 0 ; j < task -> b -> cols; j++){
+            double sum = 0.0;
+            for(int k = 0 ; k < task -> a -> cols ; k ++){
+                int index_a = i * task -> a -> cols + k;
+                int index_b = k * task -> b -> cols + j;
+
+                sum += task -> a -> data[index_a] * task -> b -> data[index_b];
+            }
+            task->c->data[i * task->c->cols + j] = sum;
+        }
+    }
+}
 // Constructor 
 
 Matrix * create_matrix(int rows,int cols ){
@@ -27,25 +53,46 @@ void free_matrix(Matrix * m){
 
 // dot product 
 
-Matrix * dot_product(Matrix* a,Matrix * b){
+Matrix * dot_product(Matrix* a,Matrix * b,ThreadPool * pool){
     // safelty check 
     assert(a -> cols == b -> rows);
     // create a matrix 
     Matrix * c = create_matrix(a-> rows,b-> cols);
-    for(int i = 0;i<a->rows;i++){
-        for(int j = 0;j< b -> cols; j++){
-            double sum = 0.0;
-            for(int k = 0; k < a-> cols; k++){
-                // we need to write the formula that converts 2D arrys into a flat 1D array 
-                // index = row * col + col
-                int a_index = i * a-> cols + k;
-                int b_index = k * b -> cols + j;
-                sum += a-> data[a_index] * b -> data[b_index];
+
+    // if no multi threading is required 
+    if (pool == NULL) {
+        for (int i = 0; i < a->rows; i++) {
+            for (int j = 0; j < b->cols; j++) {
+                double sum = 0.0;
+                for (int k = 0; k < a->cols; k++) {
+                    sum += a->data[i * a->cols + k] * b->data[k * b->cols + j];
+                }
+                c->data[i * c->cols + j] = sum;
             }
-            c -> data[i * c-> cols + j] = sum;
         }
+        return c;
     }
-    return c;
+
+    // if multi threading is being used 
+
+    int actual_threads;
+
+    if(a->rows < pool -> num_threads){
+        // each row gets its own thread
+        actual_threads = a -> rows;
+    }
+    else {
+        // if, we have more rows than threads 
+        // wakeup every thread 
+        actual_threads = pool -> num_threads;
+    }
+
+    // number of rows per thread 
+    int rows_per_thread = a->rows / actual_threads;
+
+
+    
+
 }
 
 // transpose a matrix 
