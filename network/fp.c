@@ -88,9 +88,13 @@ void network_backward(network* nn, Matrix* predictions, Matrix* expected, Matrix
 
 
 void network_update_weights(network* nn, Optimizer* opt){
-    for (int i = 0; i < nn->num_layers; i++)
+    if(opt -> state != NULL){
+        AdamState* state = (AdamState*) opt -> state;
+        state -> t += 1;
+    }
+    for (int i = 0; i < nn -> num_layers; i++)
     {
-        opt->update_func(nn->layers[i],opt->learning_rate);
+        opt -> update_func(opt,nn->layers[i],i);
     }
     
 }

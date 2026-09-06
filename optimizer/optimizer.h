@@ -33,4 +33,6 @@ struct Optimizer{
 Optimizer* create_sgd_optimizer(double learning_rate);
 void adam_update(Optimizer* opt, layer* l, int layer_index);
 Optimizer* create_adam_optimizer(double learning_rate, int num_layers, layer** layers);
+void free_optimizer(Optimizer* opt, int num_layers);
+
 #endif

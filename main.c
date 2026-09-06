@@ -55,7 +55,7 @@ int main(){
     // Output layer uses Sigmoid to squash the final answer between 0 and 1
     nn->layers[1] = create_layer(8, 1, sigmoid, sigmoid_derivative);
 
-    Optimizer* sgd = create_sgd_optimizer(0.01); // Learning rate of 0.1
+    Optimizer* sgd = create_adam_optimizer(0.01,nn->num_layers,nn ->layers); // Learning rate of 0.1
 
     ThreadPool* pool = thread_pool_init(4,10);
     // 2. Prepare the XOR Dataset (4 inputs, 4 targets)
@@ -83,13 +83,14 @@ int main(){
     // initiate the training loop 
     train_network(nn, inputs, targets, 4,epochs, sgd, mse_derivative,pool);
 
-    // free all the pointers post training 
+    // free all the pointers post training
+    free_optimizer(sgd,nn->num_layers); 
     free_network(nn);           // Our new destructor!
    for(int i = 0; i < 4; i++) {
         free_matrix(inputs[i]);
         free_matrix(targets[i]);
     }
-    free(sgd);
+    
     thread_pool_destroy(pool);
     printf("--- SHUTDOWN SUCCESSFUL ---\n");
 

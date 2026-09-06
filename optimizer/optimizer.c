@@ -1,33 +1,33 @@
 #include<optimizer.h>
 #include <stdlib.h>
 #include<matrix.h>
+#include <math.h>
+
 
 // SGD
-void sgd_update(layer* l, double lr){
-    // 1. Scale the raw gradients by the learning rate: (lr * dW)
-    Matrix* scaled_dW = matrix_multiply_scalar(l->d_weights, lr);
-    Matrix* scaled_db = matrix_multiply_scalar(l->d_biases, lr);
+void sgd_update(Optimizer* opt,layer* l, int layer_index){
+    double lr = opt -> learning_rate;
+    int w_size = l -> weights -> rows * l -> weights -> cols;
+    for (int i = 0; i < w_size; i++)
+    {
+        l -> weights -> data[i] -= lr * l -> d_weights -> data[i];
+    }
+
+    int b_size = l -> biases -> rows * l -> biases -> cols;
+
+    for (int i = 0; i < b_size; i++)
+    {
+        l -> biases -> data[i] -= lr * l -> d_biases -> data[i];
+    }
     
-    // 2. Subtract the scaled gradients from the original weights: W_new = W_old - (lr * dW)
-    Matrix* new_weights = matrix_subtract(l->weights, scaled_dW);
-    Matrix* new_biases  = matrix_subtract(l->biases, scaled_db);
     
-    // 3. Free the old parameter memory before we overwrite the pointers
-    free_matrix(l->weights);
-    free_matrix(l->biases);
-    
-    // 4. Assign the newly updated matrices back to the layer
-    l->weights = new_weights;
-    l->biases = new_biases;
-    
-    // 5. Clean up the intermediate scaled matrices to prevent memory leaks
-    free_matrix(scaled_dW);
-    free_matrix(scaled_db);
 }
+
 Optimizer* create_sgd_optimizer(double learning_rate){
     Optimizer* opt = (Optimizer*)malloc(sizeof(Optimizer));
     opt->learning_rate = learning_rate;
     opt->update_func = sgd_update;
+    opt -> state = NULL;
     return opt;
 }
 
@@ -45,6 +45,47 @@ void adam_update(Optimizer* opt, layer* l, int layer_index){
     double b2 = state -> beta2;
     double eps = state -> epsilon;
     double t = (double) state -> t;
+
+    // pre calculate the bias correctios 
+    double correct_m = 1.0 - pow(b1,t);
+    double correct_v = 1.0 - pow(b2,t);
+
+    int w_size = l->weights -> rows * l->weights -> cols;
+
+    for(int i = 0; i < w_size; i++){
+        double g = l-> d_weights -> data[i]; // this is the gt in maths 
+        
+        // calculate mt = b1 * m(t-1) + (1 - b1) * gt
+        cache.m_weights -> data[i] = b1 * cache.m_weights -> data[i] + (1.0 - b1) * g;
+
+        // calculate vt = b2* v(t-1) + (1 - b2) * gt**2
+        cache.v_weights -> data[i] = b2 * cache.v_weights -> data[i] +(1.0 - b2) * (g*g);
+
+        // apply the bias correction 
+        double m_hat = cache.m_weights->data[i] / correct_m;
+        double v_hat = cache.v_weights->data[i] / correct_v;
+
+
+        // the final parameter upate 
+        // Wt = Wt-1 - alpha * m_hat/ sqrt(v_hat) + eps 
+
+        l -> weights -> data[i] -= lr * m_hat / (sqrt(v_hat) + eps);
+    }
+
+    // update the biases the same way 
+    int b_size = l->biases->rows * l->biases->cols;
+    for(int i = 0; i < b_size; i++) {
+        double g = l->d_biases->data[i];
+        
+        cache.m_biases->data[i] = b1 * cache.m_biases->data[i] + (1.0 - b1) * g;
+        cache.v_biases->data[i] = b2 * cache.v_biases->data[i] + (1.0 - b2) * (g * g);
+        
+        double m_hat = cache.m_biases->data[i] / correct_m;
+        double v_hat = cache.v_biases->data[i] / correct_v;
+        
+        l->biases->data[i] -= lr * m_hat / (sqrt(v_hat) + eps);
+    }
+
 }
 
 
@@ -90,4 +131,21 @@ Optimizer* create_adam_optimizer(double learning_rate, int num_layers, layer** l
     opt -> state = state;
 
     return opt;
+}
+
+
+void free_optimizer(Optimizer* opt, int num_layers){
+    if(opt -> state != NULL){
+        AdamState* state = (AdamState*)opt -> state;
+        for (int i = 0; i < num_layers; i++)
+        {
+            free_matrix(state -> layer_caches[i].m_weights);
+            free_matrix(state -> layer_caches[i].v_weights);
+            free_matrix(state -> layer_caches[i].m_biases);
+            free_matrix(state -> layer_caches[i].v_biases);
+        }
+        free(state -> layer_caches);
+        free(state);
+    }
+    free(opt);
 }
