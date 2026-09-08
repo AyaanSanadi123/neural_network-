@@ -1,7 +1,7 @@
 #include "data_loader.h"
 #include<stdio.h>
 #include<stdlib.h>
-
+#include<string.h>
 
 Dataset* create_dataset(int total_samples, int num_features, int target_features){
     Dataset* data = (Dataset*)malloc(sizeof(Dataset));
@@ -81,4 +81,40 @@ void free_dataset(Dataset* data){
     }
     
     free(data);
+}
+
+
+// phase-1 (Measurement)
+void count_csv_dimensions(const char* filepath, int* out_rows, int* out_cols){
+    FILE* file = fopen(filepath,"r");
+
+    if(file == NULL){
+        printf("Fetal error, could not open file %s\n",filepath);
+        exit(1);
+    }
+    int rows = 0;
+    int commas = 0;
+    int first_line_passed = 0;
+
+    char buffer[65536] ; // this is 64kb of buffer in the L1 cache 
+    size_t bytes_read;
+    char last_ch = "\0";
+
+    while((bytes_read = fread(buffer,1,sizeof(buffer),file) > 0)){
+
+    }
+
+
+}
+
+
+void load_csv(const char* filepath, Dataset* dataset){
+    FILE* file = fopen(filepath,"r");
+
+    if(file == NULL){
+        printf("Fetal error, could not open file %s\n",filepath);
+        exit(1);
+    }
+
+
 }
