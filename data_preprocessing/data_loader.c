@@ -35,7 +35,7 @@ void split_dataset_sequential(Dataset* data, float train_ratio, float test_ratio
 
     data -> train_samples = (int) (data -> total_samples * train_ratio);
     data -> test_samples = (int) (data -> total_samples * test_ratio);
-    data -> val_samples = (int) (data -> total_samples * val_ratio);
+    data->val_samples = data->total_samples - data->train_samples - data->test_samples;
 
     data->train_inputs = (Matrix**)malloc(data->train_samples * sizeof(Matrix*));
     data->train_targets = (Matrix**)malloc(data->train_samples * sizeof(Matrix*));
@@ -151,8 +151,22 @@ void load_csv(const char* filepath, Dataset* dataset){
             // if it doesnt find a comma, it returns NULL 
 
             if(comma_ptr != NULL) *comma_ptr = '\0';
-            
-        }
-    }
 
+            double val = 0.0;
+            if(*current != '\0'){ // if there is a string and not \0 then get then convert the asci value into float64
+                val = atof(current);
+            }
+            
+            if(cols < dataset -> num_features){
+                dataset -> raw_inputs[row] -> data[cols] = val;
+            }else {
+                dataset->raw_targets[row]->data[cols - dataset->num_features] = val;
+            }
+
+            if(comma_ptr != NULL) current = comma_ptr + 1;
+        }
+        row ++;
+        if(row >= dataset -> total_samples) break;
+    }
+    fclose(file);
 }
