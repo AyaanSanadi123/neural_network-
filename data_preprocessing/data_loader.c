@@ -101,11 +101,30 @@ void count_csv_dimensions(const char* filepath, int* out_rows, int* out_cols){
     char last_ch = "\0";
 
     while((bytes_read = fread(buffer,1,sizeof(buffer),file) > 0)){
+        for(size_t i = 0; i< bytes_read; i++){
+            // get the charecter from the buffer 
+            char ch = buffer[i];
+            // now to count the number of commas, we just need to iterate the first row
+            if(first_line_passed == 0 && ch == ',') commas++;
 
+            if(ch == '\n'){
+                rows++;
+                first_line_passed = 1;
+            }
+            last_ch = ch;
+        }
     }
 
+    if(last_ch != '\n' && last_ch != '\0' && rows > 0) rows++;
 
+    *out_rows = rows;
+    *out_cols = commas + 1;
+
+    fclose(file);
 }
+
+// the point of this function is to convert the data in the csv into raw numbers for the neural network 
+
 
 
 void load_csv(const char* filepath, Dataset* dataset){
@@ -115,6 +134,25 @@ void load_csv(const char* filepath, Dataset* dataset){
         printf("Fetal error, could not open file %s\n",filepath);
         exit(1);
     }
+    char line[4096]; // this is 4kbs of a line buffer, is usually enough for most datasets, if this is the bottle-neck for you, please update it 
+    int row = 0;
+    // the total cols = input features + output features 
+    int total_cols = dataset -> num_features + dataset-> target_features;
+    // use fgets to get one line at a time, 
+    // here u take a line, clean it, put the numbers into the matrix and start with a new line
+    while(fgets(line,sizeof(line),file)){
 
+        line[strcspn(line, "\r\n")] = '\0';
+
+        char* current = line; // this is our read head, that moves through the string, currently pointing at the first char in the line 
+        for(int cols = 0; cols< total_cols; cols++){
+            // this finds the first comma in the char array and returns it memory address
+            char* comma_ptr = strchr(current,',');
+            // if it doesnt find a comma, it returns NULL 
+
+            if(comma_ptr != NULL) *comma_ptr = '\0';
+            
+        }
+    }
 
 }
