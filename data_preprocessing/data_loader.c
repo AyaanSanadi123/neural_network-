@@ -140,6 +140,8 @@ void load_csv(const char* filepath, Dataset* dataset){
     int total_cols = dataset -> num_features + dataset-> target_features;
     // use fgets to get one line at a time, 
     // here u take a line, clean it, put the numbers into the matrix and start with a new line
+    // if your csv file has headers, uncomment this file to make a silent read, else it will just corrept the dataset
+   // fgets(line, sizeof(line), file);
     while(fgets(line,sizeof(line),file)){
 
         line[strcspn(line, "\r\n")] = '\0';
