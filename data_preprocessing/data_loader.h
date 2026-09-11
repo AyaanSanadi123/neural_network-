@@ -30,6 +30,10 @@ typedef struct {
     Matrix** val_inputs;
     Matrix** val_targets;
 
+    // target scale 
+    double target_min;
+    double target_max;
+
 } Dataset;
 
 

@@ -245,4 +245,43 @@ void normalize_dataset(Dataset* data){
     
     free(min_vals);
     free(max_vals);
+
+    // normalise the target values 
+    data->target_min = DBL_MAX;
+    data->target_max = -DBL_MAX;
+
+    // scan the targets 
+    for(int i = 0; i < data -> train_samples;i++){
+        double current_rul = data -> train_targets[i] -> data[0]; // this assumes you just have one output column(for this version this is a limitation, will look into this later)
+
+        if(current_rul < data -> target_min) data -> target_min = current_rul;
+        if(current_rul > data -> target_max) data -> target_max = current_rul;
+    }
+    double target_range = data->target_max - data -> target_min;
+
+    if(target_range > 1e-7){
+        for (int i = 0; i < data->train_samples; i++) {
+            data->train_targets[i]->data[0] = 
+                (data->train_targets[i]->data[0] - data->target_min) / target_range;
+        }
+        
+        // Scale Test Targets
+        for (int i = 0; i < data->test_samples; i++) {
+            data->test_targets[i]->data[0] = 
+                (data->test_targets[i]->data[0] - data->target_min) / target_range;
+        }
+        
+        // Scale Val Targets
+        for (int i = 0; i < data->val_samples; i++) {
+            data->val_targets[i]->data[0] = 
+                (data->val_targets[i]->data[0] - data->target_min) / target_range;
+        }
+        
+    }else {
+        for (int i = 0; i < data->train_samples; i++) data->train_targets[i]->data[0] = 0.0;
+        for (int i = 0; i < data->test_samples; i++) data->test_targets[i]->data[0] = 0.0;
+        for (int i = 0; i < data->val_samples; i++) data->val_targets[i]->data[0] = 0.0;
+    }
+
+
 }
