@@ -2,7 +2,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
-
+#include<float.h>
 Dataset* create_dataset(int total_samples, int num_features, int target_features){
     Dataset* data = (Dataset*)malloc(sizeof(Dataset));
 
@@ -169,4 +169,80 @@ void load_csv(const char* filepath, Dataset* dataset){
         if(row >= dataset -> total_samples) break;
     }
     fclose(file);
+}
+
+void normalize_dataset(Dataset* data){
+    int features = data -> num_features;
+
+    // create the arrays to hold the min and max values of each column 
+    double* min_vals = (double*)malloc(features * sizeof(double));
+    double* max_vals = (double*) malloc(features * sizeof(double));
+
+    double inf = DBL_MAX;
+    for (int i = 0; i < features; i++)
+    {
+        min_vals[i] = inf;
+        max_vals[i] = -inf;
+    }
+    
+
+    // time to scan only the training dataset and find the min and max values for each column
+    for (int i = 0; i < data -> train_samples; i++)
+    {
+        for(int j = 0 ; j < features ; j++){
+            double current_val = data -> train_inputs[i] -> data[j];
+
+            if (current_val < min_vals[j]) min_vals[j] = current_val;
+            if (current_val > max_vals[j]) max_vals[j] = current_val;
+        }
+    }
+
+
+    // applying the normalization to train 
+
+    for (int i = 0; i < data->train_samples; i++)
+    {
+       for(int j = 0; j < features; j++){
+        double range = max_vals[j] - min_vals[j];
+        if (range > 1e-7)
+        {
+           data -> train_inputs[i] -> data[j] = (data -> train_inputs[i] -> data[j] - min_vals[j]) / range;
+        }else {
+            data -> train_inputs[i] -> data [j] = 0.0;
+        }
+        
+       }
+    }
+    
+    // apply to test 
+    for (int i = 0; i < data -> test_samples; i++)
+    {
+        for(int j = 0; j< features ; j++){
+            double range = max_vals[j] - min_vals[j];
+            if (range > 1e-7)
+            {
+                data -> test_inputs[i] -> data[j] = (data -> test_inputs[i] -> data[j] - min_vals[j]) / range;
+            }
+            else {
+                data -> test_inputs[i] -> data[j] = 0.0;
+            }
+        }
+    }
+    // apply to val 
+    for (int i = 0; i < data -> val_samples; i++)
+    {
+        for(int j = 0; j< features ; j++){
+            double range = max_vals[j] - min_vals[j];
+            if (range > 1e-7)
+            {
+                data -> val_inputs[i] -> data[j] = (data -> val_inputs[i] -> data[j] - min_vals[j]) / range;
+            }
+            else {
+                data -> val_inputs[i] -> data[j] = 0.0;
+            }
+        }
+    }
+    
+    free(min_vals);
+    free(max_vals);
 }

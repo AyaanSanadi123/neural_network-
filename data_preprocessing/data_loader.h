@@ -38,5 +38,5 @@ void split_dataset_sequential(Dataset* data, float train_ratio, float test_ratio
 void free_dataset(Dataset* data);
 void count_csv_dimensions(const char* filepath, int* out_rows, int* out_cols);
 void load_csv(const char* filepath, Dataset* dataset);
-
+void normalize_dataset(Dataset* data);
 #endif
