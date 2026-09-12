@@ -85,14 +85,17 @@ void free_dataset(Dataset* data){
 
 
 // phase-1 (Measurement)
-void count_csv_dimensions(const char* filepath, int* out_rows, int* out_cols){
+void count_csv_dimensions(const char* filepath, int* out_rows, int* out_cols,int has_header){
     FILE* file = fopen(filepath,"r");
 
     if(file == NULL){
         printf("Fetal error, could not open file %s\n",filepath);
         exit(1);
     }
-    int rows = 0;
+    int rows;
+    if(has_header){
+        rows = -1;
+    }else rows = 0;
     int commas = 0;
     int first_line_passed = 0;
 
@@ -127,7 +130,7 @@ void count_csv_dimensions(const char* filepath, int* out_rows, int* out_cols){
 
 
 
-void load_csv(const char* filepath, Dataset* dataset){
+void load_csv(const char* filepath, Dataset* dataset,int has_header){
     FILE* file = fopen(filepath,"r");
 
     if(file == NULL){
@@ -138,10 +141,18 @@ void load_csv(const char* filepath, Dataset* dataset){
     int row = 0;
     // the total cols = input features + output features 
     int total_cols = dataset -> num_features + dataset-> target_features;
+
+    // if we have a header file, we need to manager it here 
+    if(has_header){
+        if (fgets(line, sizeof(line), file) == NULL) {
+            printf("Error: File is empty or only contains a header.\n");
+            fclose(file);
+            exit(1);
+        }
+    }
     // use fgets to get one line at a time, 
     // here u take a line, clean it, put the numbers into the matrix and start with a new line
-    // if your csv file has headers, uncomment this file to make a silent read, else it will just corrept the dataset
-   // fgets(line, sizeof(line), file);
+    
     while(fgets(line,sizeof(line),file)){
 
         line[strcspn(line, "\r\n")] = '\0';
