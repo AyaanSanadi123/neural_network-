@@ -17,4 +17,6 @@ Matrix* matrix_add(Matrix* a, Matrix* b);
 Matrix* matrix_map(Matrix* m, double (*func)(double));
 Matrix* matrix_subtract(Matrix* a, Matrix* b);
 Matrix* matrix_multiply_scalar(Matrix* m, double scalar);
+Matrix* matrix_add_bias(Matrix* wx, Matrix* bias);
+Matrix* matrix_sum_columns(Matrix* m);
 #endif
