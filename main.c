@@ -198,8 +198,8 @@ int main(){
     nn -> layers[2] = create_layer(32,1,linear,linear_derivative);
    
     // initiate the optimizer 
-    Optimizer* adam = create_adam_optimizer(0.001,nn->num_layers,nn->layers);
-    int epochs = 10;
+    Optimizer* adam = create_adam_optimizer(0.05,nn->num_layers,nn->layers);
+    int epochs = 100;
     int batch_size = 1024;
     train_network(nn,dataset,epochs,batch_size,adam,mse_derivative,pool,logger);
 
