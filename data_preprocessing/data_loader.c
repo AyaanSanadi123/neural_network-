@@ -298,3 +298,21 @@ void normalize_dataset(Dataset* data){
 
 
 }
+
+
+
+void get_batch(Dataset* data, Matrix** source_inputs, Matrix** source_targets, int start_index, int current_batch_size, Matrix* batch_input, Matrix* batch_expected) {
+    for (int b = 0; b < current_batch_size; b++) {
+        int dataset_index = start_index + b;
+        
+        for (int f = 0; f < data->num_features; f++) {
+            // Now reads from whatever source array we pass in
+            batch_input->data[f * batch_input->cols + b] = source_inputs[dataset_index]->data[f];
+        }
+        
+        for (int t = 0; t < data->target_features; t++) {
+            // Now reads from whatever target array we pass in
+            batch_expected->data[t * batch_expected->cols + b] = source_targets[dataset_index]->data[t];
+        }
+    }
+}

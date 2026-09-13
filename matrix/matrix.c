@@ -210,3 +210,39 @@ Matrix* matrix_multiply_scalar(Matrix* m, double scalar){
     }
     return result;
 }
+
+Matrix* matrix_add_bias(Matrix* wx, Matrix* bias){
+    // we need to add the one value in the bias's row to all the values in the row of wx, thats the core function
+    assert(wx -> rows == bias ->rows && bias -> cols == 1);
+
+    Matrix* results = create_matrix(wx->rows,wx->cols);
+
+    for (int i = 0; i < wx -> rows; i++)
+    {
+       // cache the biases value so we dont need to look it up again and again 
+       double bias_value = bias -> data [i];
+       
+       for(int j = 0; j< wx -> cols; j++){
+         results -> data [i * wx->cols + j] = wx->data[i * wx->cols + j] + bias_value; // i * wx->cols + j this is just the 2D mappings inside the 1D array
+       }
+    }
+    return results;
+}
+
+// during back prop, we need to add all the values in the row and compress it into just one value
+Matrix* matrix_sum_columns(Matrix* m){
+    Matrix* result = create_matrix(m->rows,1);
+    for (int i = 0; i < m->rows; i++) {
+        double row_sum = 0.0;
+        
+        // Sweep horizontally across the batch and tally the total error for this neuron
+        for (int j = 0; j < m->cols; j++) {
+            row_sum += m->data[i * m->cols + j];
+        }
+        
+        // Store the collapsed sum in the 1D bias gradient array
+        result->data[i] = row_sum;
+    }
+    
+    return result;
+}

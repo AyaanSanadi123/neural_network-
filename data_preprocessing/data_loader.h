@@ -43,4 +43,5 @@ void free_dataset(Dataset* data);
 void count_csv_dimensions(const char* filepath, int* out_rows, int* out_cols,int has_header);
 void load_csv(const char* filepath, Dataset* dataset,int has_header);
 void normalize_dataset(Dataset* data);
+void get_batch(Dataset* data, Matrix** source_inputs, Matrix** source_targets, int start_index, int current_batch_size, Matrix* batch_input, Matrix* batch_expected);
 #endif

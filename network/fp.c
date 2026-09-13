@@ -21,7 +21,7 @@ Matrix* layer_forward(layer* layer, Matrix* input,ThreadPool* pool){
     
     // prepare the preactivation (z = wx+b)
     // and cache this value aswell 
-    layer->z_cache = matrix_add(wx,layer->biases);
+    layer->z_cache = matrix_add_bias(wx,layer->biases);
     // apply the actiavtion and cache that aswell 
     layer->activation_cache = matrix_map(layer->z_cache,layer->activation_func);
     
@@ -61,7 +61,7 @@ Matrix* layer_backward(layer* l, Matrix* dA,ThreadPool* pool){
 
     // calculate db = dZ
     if (l->d_biases != NULL) free_matrix(l->d_biases);
-    l->d_biases = matrix_copy(dZ);
+    l->d_biases = matrix_sum_columns(dZ);
 
     // calculate dA_prev = W^T * dZ
     Matrix* W_T = transpose(l->weights);
