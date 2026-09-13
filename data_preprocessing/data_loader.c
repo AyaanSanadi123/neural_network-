@@ -12,8 +12,8 @@ Dataset* create_dataset(int total_samples, int num_features, int target_features
 
 
     // allocate the blank matrices 
-    data -> raw_inputs = (Matrix*) malloc(total_samples * sizeof(Matrix*));
-    data -> raw_targets = (Matrix*) malloc(total_samples * sizeof(Matrix*));
+    data -> raw_inputs = (Matrix**) malloc(total_samples * sizeof(Matrix*));
+    data -> raw_targets = (Matrix**) malloc(total_samples * sizeof(Matrix*));
 
     // allocate exaclty one matrix per row for both input and output 
     for (int i = 0; i < total_samples; i++)
@@ -101,9 +101,9 @@ void count_csv_dimensions(const char* filepath, int* out_rows, int* out_cols,int
 
     char buffer[65536] ; // this is 64kb of buffer in the L1 cache 
     size_t bytes_read;
-    char last_ch = "\0";
+    char last_ch = '\0';
 
-    while((bytes_read = fread(buffer,1,sizeof(buffer),file) > 0)){
+    while((bytes_read = fread(buffer,1,sizeof(buffer),file)) > 0){
         for(size_t i = 0; i< bytes_read; i++){
             // get the charecter from the buffer 
             char ch = buffer[i];
