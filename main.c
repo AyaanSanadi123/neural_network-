@@ -115,11 +115,24 @@ void test_network(network* nn, Dataset* dataset, int batch_size, ThreadPool* poo
     
     double test_mse = 0.0;
     double test_mae = 0.0;
+    double test_mape = 0.0; // MAPE accumulator
+    double ss_res = 0.0;    // Residual sum of squares for R^2
+    double ss_tot = 0.0;    // Total sum of squares for R^2
+    
     double target_range = dataset->target_max - dataset->target_min;
+
+    // STEP 1: Calculate the exact mean of the test dataset for R-Squared
+    double test_target_mean = 0.0;
+    for (int i = 0; i < dataset->test_samples; i++) {
+        double real_target = (dataset->test_targets[i]->data[0] * target_range) + dataset->target_min;
+        test_target_mean += real_target;
+    }
+    test_target_mean /= dataset->test_samples;
 
     Matrix* test_batch_input = create_matrix(dataset->num_features, batch_size);
     Matrix* test_batch_expected = create_matrix(dataset->target_features, batch_size);
 
+    // STEP 2: The standard test sweep
     for (int i = 0; i < dataset->test_samples; i += batch_size) {
         int current_batch_size = batch_size;
         
@@ -129,10 +142,8 @@ void test_network(network* nn, Dataset* dataset, int batch_size, ThreadPool* poo
             test_batch_expected->cols = current_batch_size;
         }
 
-        // Pass the TEST arrays into the universal shovel
         get_batch(dataset, dataset->test_inputs, dataset->test_targets, i, current_batch_size, test_batch_input, test_batch_expected);
 
-        // Final forward pass through the trained network
         Matrix* predictions = network_forward(nn, test_batch_input, pool);
 
         for (int b = 0; b < current_batch_size; b++) {
@@ -140,27 +151,44 @@ void test_network(network* nn, Dataset* dataset, int batch_size, ThreadPool* poo
             double real_target = (test_batch_expected->data[b] * target_range) + dataset->target_min;
             
             double error = real_pred - real_target;
+            
+            // Standard Error Metrics
             test_mse += (error * error);
             test_mae += fabs(error);
+            
+            // MAPE: Absolute Error divided by Actual Target
+            if (real_target != 0.0) { // Safety check against division by zero
+                test_mape += fabs(error / real_target);
+            }
+            
+            // R-Squared Components
+            ss_res += (error * error);
+            ss_tot += (real_target - test_target_mean) * (real_target - test_target_mean);
         }
 
         network_free_caches(nn);
         free_matrix(predictions);
     }
 
+    // Final Metric Averaging
     test_mse /= dataset->test_samples;
     test_mae /= dataset->test_samples;
+    test_mape = (test_mape / dataset->test_samples) * 100.0; // Convert to percentage
+    
+    // R-Squared Formula
+    double r_squared = 1.0 - (ss_res / ss_tot);
 
     printf("=========================================\n");
     printf("FINAL ENGINE GRADE ON UNSEEN TRACK DATA:\n");
     printf("Mean Squared Error: %.4f\n", test_mse);
-    printf("Mean Absolute Error: %.4f seconds off per lap\n", test_mae);
+    printf("Mean Absolute Error: %.4f ms off per lap\n", test_mae);
+    printf("Mean Absolute Percentage Error (MAPE): %.2f%%\n", test_mape);
+    printf("R-Squared (Knowledge Percentage): %.4f (%.2f%%)\n", r_squared, r_squared * 100.0);
     printf("=========================================\n\n");
 
     free_matrix(test_batch_input);
     free_matrix(test_batch_expected);
 }
-
 
 int main(){
     const char* dataset_file = "data/lap_time_predictor_dataset_cleaned.csv";
@@ -189,7 +217,7 @@ int main(){
     // lets initialize the engine modules 
     // first the benchmarking engine 
     BenchLogger* logger = logger_init("training_benchmark.csv");
-    ThreadPool* pool = thread_pool_init(12,1024);
+    ThreadPool* pool = thread_pool_init(8,1024);
 
     // create neural network of three layers 
     network* nn = create_network(3);
