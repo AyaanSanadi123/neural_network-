@@ -28,3 +28,16 @@ double linear(double x){
 double linear_derivative(double x){
     return 1.0;
 }
+
+double leaky_relu(double m){
+    if (m > 0.0) return m;
+    else return 0.01 * m;
+}
+
+double leaky_relu_derivative(double m) {
+    if (m > 0.0) {
+        return 1.0;
+    } else {
+        return 0.01;
+    }
+}

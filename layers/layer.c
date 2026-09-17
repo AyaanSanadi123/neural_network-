@@ -2,7 +2,7 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<math.h>
-
+#include<activations.h>
 #include<layer.h>
 
 
@@ -20,10 +20,19 @@ layer* create_layer(int input_size,int output_size,double (*act_func)(double), d
     l -> weights = create_matrix(output_size,input_size);
     l -> biases = create_matrix(output_size,1);
 
-    // the weights needs to be random (bw -0.5 and 0.5)
-    for (int i = 0; i < l->weights->rows * l->weights->cols; i++)
-    {
-        l->weights->data[i] = random_uniform();
+    double limit = 0.0;
+    if (act_func == relu || act_func == leaky_relu) {
+        // He Initialization (Compensates for 50% data loss)
+        limit = sqrt(2.0 / input_size);
+    } else {
+        // Xavier/Glorot Initialization (Standard variance preservation)
+        limit = sqrt(1.0 / input_size);
+    }
+
+    for (int i = 0; i < l->weights->rows * l->weights->cols; i++) {
+        // Generate random number between -1.0 and 1.0, then scale by the selected limit
+        double rand_normalized = ((double)rand() / (double)RAND_MAX) * 2.0 - 1.0;
+        l->weights->data[i] = rand_normalized * limit;
     }
     
     for (int i = 0; i < l->biases->rows * l->biases->cols; i++) {
@@ -44,6 +53,7 @@ layer* create_layer(int input_size,int output_size,double (*act_func)(double), d
 
     return l;
 }
+
 void layer_free_caches(layer* l){
     if (l->input_cache != NULL) {
         free_matrix(l->input_cache);

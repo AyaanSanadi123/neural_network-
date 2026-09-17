@@ -193,12 +193,12 @@ int main(){
 
     // create neural network of three layers 
     network* nn = create_network(3);
-    nn -> layers[0] = create_layer(7,64,relu,relu_derivative);
-    nn -> layers[1] = create_layer(64,32,relu,relu_derivative);
+    nn -> layers[0] = create_layer(7,64,leaky_relu,leaky_relu_derivative);
+    nn -> layers[1] = create_layer(64,32,leaky_relu,leaky_relu_derivative);
     nn -> layers[2] = create_layer(32,1,linear,linear_derivative);
    
     // initiate the optimizer 
-    Optimizer* adam = create_adam_optimizer(0.05,nn->num_layers,nn->layers);
+    Optimizer* adam = create_adam_optimizer(0.002,nn->num_layers,nn->layers);
     int epochs = 100;
     int batch_size = 1024;
     train_network(nn,dataset,epochs,batch_size,adam,mse_derivative,pool,logger);
@@ -221,5 +221,8 @@ int main(){
 
 
 
-
+// windows 
 // gcc -Iactivation_functions -Ilayers -Iloss_functions -Imatrix -Inetwork -Ioptimizer -Ithread_pool -Ibenchmarking_engine -Idata_preprocessing main.c activation_functions\activations.c layers\layer.c loss_functions\losses.c matrix\matrix.c network\fp.c optimizer\optimizer.c thread_pool\threadpool.c benchmarking_engine\b_engine.c data_preprocessing\data_loader.c -o neural_network.exe -pthread -lm
+
+// mac 
+// gcc -Iactivation_functions -Ilayers -Iloss_functions -Imatrix -Inetwork -Ioptimizer -Ithread_pool -Ibenchmarking_engine -Idata_preprocessing main.c activation_functions/activations.c layers/layer.c loss_functions/losses.c matrix/matrix.c network/fp.c optimizer/optimizer.c thread_pool/threadpool.c benchmarking_engine/b_engine.c data_preprocessing/data_loader.c -o neural_network -pthread -lm
